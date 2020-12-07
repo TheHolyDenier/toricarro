@@ -6,10 +6,14 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.util.AttributeSet
+import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.View
 import app.toricarro.views.AppUtils
 import kotlin.math.min
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class JoystickView : SurfaceView, SurfaceHolder.Callback {
     private var cx: Float = 0f
@@ -18,7 +22,7 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
     private var hatRadius: Float = 0f
 
     constructor(context: Context) : super(context) {
-        holder.addCallback(this)
+        startJoystick()
     }
 
     constructor(
@@ -26,14 +30,20 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
         attributes: AttributeSet,
         style: Int
     ) : super(context, attributes, style) {
-        holder.addCallback(this)
+        startJoystick()
     }
 
     constructor(
         context: Context,
         attributes: AttributeSet,
     ) : super(context, attributes) {
+        startJoystick()
+
+    }
+
+    private fun startJoystick() {
         holder.addCallback(this)
+        setOnTouchListener(this::onTouch)
     }
 
     private fun setupDimensions() {
@@ -70,4 +80,26 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
     }
 
 
+    private fun onTouch(v: View, e: MotionEvent): Boolean {
+        if (v == this) {
+            if (e.action != MotionEvent.ACTION_UP) {
+                calculateJoystickMovement(e)
+            } else {
+                drawJoystick(cx, cy)
+            }
+        }
+        return true
+    }
+
+    private fun calculateJoystickMovement(e: MotionEvent) {
+        val displacement = sqrt(((e.x - cx).pow(2)) + ((e.y - cy).pow(2)))
+        if (displacement < baseRadius) {
+            drawJoystick(e.x, e.y)
+        } else {
+            val ratio = baseRadius / displacement
+            val constrainedX = cx + (e.x - cx) * ratio
+            val constrainedY = cy + (e.y - cy) * ratio
+            drawJoystick(constrainedX, constrainedY)
+        }
+    }
 }
