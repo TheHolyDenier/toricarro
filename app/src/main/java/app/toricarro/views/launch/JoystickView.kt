@@ -1,10 +1,7 @@
 package app.toricarro.views.launch
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.PorterDuff
+import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.SurfaceHolder
@@ -20,9 +17,10 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
     private var cy: Float = 0f
     private var baseRadius: Float = 0f
     private var hatRadius: Float = 0f
+    private lateinit var joystickCallback: JoystickListener
 
     constructor(context: Context) : super(context) {
-        startJoystick()
+        startJoystick(context)
     }
 
     constructor(
@@ -30,18 +28,18 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
         attributes: AttributeSet,
         style: Int
     ) : super(context, attributes, style) {
-        startJoystick()
+        startJoystick(context)
     }
 
     constructor(
         context: Context,
         attributes: AttributeSet,
     ) : super(context, attributes) {
-        startJoystick()
-
+        startJoystick(context)
     }
 
-    private fun startJoystick() {
+    private fun startJoystick(context: Context) {
+        if (context is JoystickListener) joystickCallback = context
         holder.addCallback(this)
         setOnTouchListener(this::onTouch)
     }
@@ -50,7 +48,7 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
         cx = width / 2f
         cy = height / 2f
         baseRadius = min(width, height) / 3f
-        hatRadius = min(width, height) / 5f
+        hatRadius = min(width, height) / 7f
     }
 
     private fun drawJoystick(x: Float, y: Float) {
@@ -67,9 +65,9 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {
+        holder.setFormat(PixelFormat.TRANSPARENT)
         setupDimensions()
         drawJoystick(cx, cy)
-
     }
 
     override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
@@ -82,10 +80,10 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
 
     private fun onTouch(v: View, e: MotionEvent): Boolean {
         if (v == this) {
-            if (e.action != MotionEvent.ACTION_UP) {
-                calculateJoystickMovement(e)
-            } else {
+            if (e.action != MotionEvent.ACTION_UP) calculateJoystickMovement(e)
+            else {
                 drawJoystick(cx, cy)
+                joystickCallback.onJoysticMoved(0f, 0f, id)
             }
         }
         return true
@@ -95,11 +93,18 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
         val displacement = sqrt(((e.x - cx).pow(2)) + ((e.y - cy).pow(2)))
         if (displacement < baseRadius) {
             drawJoystick(e.x, e.y)
-        } else {
+            joystickCallback.onJoysticMoved((e.x-cx)/baseRadius, (e.y-cy)/baseRadius, id)
+        }
+        else {
             val ratio = baseRadius / displacement
             val constrainedX = cx + (e.x - cx) * ratio
             val constrainedY = cy + (e.y - cy) * ratio
             drawJoystick(constrainedX, constrainedY)
+            joystickCallback.onJoysticMoved((constrainedX-cx)/baseRadius, (constrainedY-cy)/baseRadius, id)
         }
+    }
+
+    interface JoystickListener {
+        fun onJoysticMoved(xPercent: Float, yPercent: Float, id: Int)
     }
 }

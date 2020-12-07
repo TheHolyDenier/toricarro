@@ -3,19 +3,22 @@ package app.toricarro.views.launch
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import app.toricarro.databinding.ActivityLaunchBinding
+import app.toricarro.views.AppUtils
 
-class LaunchActivity : AppCompatActivity() {
+class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     private lateinit var b: ActivityLaunchBinding
-
-    private lateinit var joystickView: JoystickView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         b = ActivityLaunchBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        joystickView = JoystickView(this)
-//        setContentView(joystickView)
-        b.joystick.addView(joystickView)
+        b.joystick.setZOrderOnTop(true)
     }
+
+    override fun onJoysticMoved(xPercent: Float, yPercent: Float, id: Int) {
+        AppUtils.log("id$id: x$xPercent y$yPercent", this)
+    }
+
+
 }
