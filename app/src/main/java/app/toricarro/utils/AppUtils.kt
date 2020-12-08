@@ -1,4 +1,4 @@
-package app.toricarro.views
+package app.toricarro.utils
 
 import android.content.Context
 import android.util.Log

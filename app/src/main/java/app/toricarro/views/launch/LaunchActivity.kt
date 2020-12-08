@@ -12,18 +12,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.children
 import app.toricarro.R
 import app.toricarro.databinding.ActivityLaunchBinding
-import app.toricarro.views.AppUtils
+import app.toricarro.utils.AppUtils
 import app.toricarro.views.MainActivity
-import com.ahmedabdelmeged.bluetoothmc.BluetoothMC
-import com.ahmedabdelmeged.bluetoothmc.BluetoothMC.BluetoothConnectionListener
-import com.ahmedabdelmeged.bluetoothmc.util.BluetoothStates
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 
 
 class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     private lateinit var b: ActivityLaunchBinding
-    private lateinit var bluetooth: BluetoothMC
 
     private var controlId: Int = 0
     private var pointerActive: Boolean = false
@@ -51,7 +47,7 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                         it.imageTintList = resources.getColorStateList(
                             R.color.colorPrimary,
                             theme
-                        ) else if (event.getAction() == MotionEvent.ACTION_UP)
+                        ) else if (event.action == MotionEvent.ACTION_UP)
                         it.imageTintList = resources.getColorStateList(
                             R.color.light_gray,
                             theme
@@ -84,8 +80,6 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
         i = intent
-        bluetooth = BluetoothMC()
-        setBluetooth()
 
     }
 
@@ -141,49 +135,12 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     }
 
 
-    private fun setBluetooth() {
-        bluetooth.disconnect()
-        bluetooth.setOnBluetoothConnectionListener(object : BluetoothConnectionListener {
-            override fun onDeviceConnecting() {
-                AppUtils.log("onDeviceConnecting", baseContext)
-                //this method triggered during the connection processes
-            }
-
-            override fun onDeviceConnected() {
-                //this method triggered if the connection success
-                AppUtils.log("onDeviceConnected", baseContext)
-
-                retries = 0
-                sendData()
-            }
-
-            override fun onDeviceDisconnected() {
-                AppUtils.log("onDeviceDisconnected  $retries", baseContext)
-
-                //this method triggered if the device disconnected
-                startMain()
-            }
-
-            override fun onDeviceConnectionFailed() {
-                AppUtils.log("onDeviceConnectionFailed $retries", baseContext)
-
-                //this method triggered if the connection failed
-                startMain()
-            }
-        })
-        bluetooth.connect(i)
-        AppUtils.log(
-            "${intent.getStringExtra(BluetoothStates.EXTRA_DEVICE_ADDRESS)}", baseContext
-        )
-    }
-
     private fun startMain() {
         retries++
         if (retries > 3) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()
         } else {
-            setBluetooth()
         }
     }
 
@@ -193,9 +150,4 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         y = yPercent
     }
 
-
-    override fun onStop() {
-        super.onStop()
-        bluetooth.disconnect()
-    }
 }

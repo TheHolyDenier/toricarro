@@ -7,7 +7,6 @@ import android.view.MotionEvent
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
-import app.toricarro.views.AppUtils
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.sqrt
