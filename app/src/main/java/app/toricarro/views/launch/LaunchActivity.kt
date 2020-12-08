@@ -1,6 +1,6 @@
 package app.toricarro.views.launch
 
-import android.content.Intent
+import android.bluetooth.BluetoothDevice
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.MotionEvent
@@ -8,14 +8,15 @@ import android.view.View.OnTouchListener
 import android.view.WindowManager
 import android.widget.CheckBox
 import android.widget.ImageButton
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.children
 import app.toricarro.R
 import app.toricarro.databinding.ActivityLaunchBinding
 import app.toricarro.utils.AppUtils
-import app.toricarro.views.MainActivity
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import me.aflak.bluetooth.Bluetooth
+import me.aflak.bluetooth.interfaces.DeviceCallback
 
 
 class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
@@ -30,12 +31,20 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     private var y: Float = 0f
     private var speed = arrayListOf(1000, 2000)
 
-    private lateinit var i: Intent
+    private lateinit var device: BluetoothDevice
+    private lateinit var bluetooth: Bluetooth
+
+    private var sendingData = false
+    private var activityOn = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         b = ActivityLaunchBinding.inflate(layoutInflater)
         setContentView(b.root)
+
+        device = intent.getParcelableExtra("MAC")!!
+
+        bluetooth = Bluetooth(this)
 
         b.joystick.setZOrderOnTop(true)
         b.rg.children.forEach { it.setOnClickListener { view -> checkRBClick(view.id) } }
@@ -79,17 +88,52 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
 
-        i = intent
 
     }
 
+    private fun setBluetooth() {
+        AppUtils.log("${device.name} ${device.address}", this)
+        bluetooth.connectToDevice(device)
+        bluetooth.setDeviceCallback(object : DeviceCallback {
+            override fun onDeviceConnected(device: BluetoothDevice) {
+                AppUtils.log("onDeviceConnected", baseContext)
+                retries = 0
+                sendingData = true
+                sendData()
+            }
+
+            override fun onDeviceDisconnected(device: BluetoothDevice, message: String) {
+                AppUtils.log("onDeviceDisconnected", baseContext)
+                startMain()
+
+            }
+
+            override fun onMessage(message: ByteArray) {
+                AppUtils.log("onDeviceDisconnected", baseContext)
+
+            }
+
+            override fun onError(errorCode: Int) {
+                AppUtils.log("error $errorCode", baseContext)
+                startMain()
+            }
+
+            override fun onConnectError(device: BluetoothDevice, message: String) {
+                AppUtils.log("onConnectError $message", baseContext)
+                startMain()
+
+
+            }
+        })
+    }
+
     private fun sendData() {
-        runBlocking {
+        GlobalScope.launch {
 //            ARRAY 13 bytes: INITIALIZATION (0xABCD), x * 2000, y * 2000, singleshot (0/1),
 //            burts, fullauto, laserpoint, blinkerleft, emergency, blinkerright
             val currentSpeed = speed[if (b.speed.isSelected) 1 else 0]
-            val bytes: Array<Byte> =
-                arrayOf(
+            val bytes =
+                byteArrayOf(
                     171.toByte(),
                     205.toByte(),
                     (x * currentSpeed / 256).toInt().toByte(),
@@ -104,10 +148,10 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                     (if (b.emergencyLight.isSelected) 1 else 0).toByte(),
                     (if (b.blinkerRight.isSelected) 1 else 0).toByte(),
                 )
+            bluetooth.send(bytes)
             AppUtils.log("bytes $bytes ${bytes.size}", baseContext)
-//            bluetooth.send()
             delay(200)
-            sendData()
+            if (sendingData && activityOn) sendData()
         }
     }
 
@@ -121,7 +165,6 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                     cb.isSelected = false
                 }
                 setCBColor(cb, cb.isSelected)
-
             }
         }
         b.rg.refreshDrawableState()
@@ -136,11 +179,16 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
 
 
     private fun startMain() {
+        runOnUiThread {
+            Toast.makeText(this, "Sin conexión con el dispositivo", Toast.LENGTH_LONG)
+                .show()
+        }
         retries++
-        if (retries > 3) {
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-        } else {
+        sendingData = false
+        AppUtils.log("startMain $retries", baseContext)
+        runBlocking {
+            delay(1000)
+            if (activityOn) setBluetooth()
         }
     }
 
@@ -149,5 +197,25 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         x = xPercent
         y = yPercent
     }
+
+
+    override fun onStart() {
+        super.onStart()
+        activityOn = true
+        bluetooth.onStart()
+        if (bluetooth.isEnabled) {
+            setBluetooth()
+        } else {
+            bluetooth.showEnableDialog(this)
+        }
+    }
+
+    override fun onStop() {
+        activityOn = false
+        super.onStop()
+        if (bluetooth.isConnected) bluetooth.disconnect()
+        bluetooth.onStop()
+    }
+
 
 }

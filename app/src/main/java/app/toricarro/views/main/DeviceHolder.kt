@@ -7,6 +7,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import app.toricarro.R
+import app.toricarro.models.ConnectBluetooth
 import org.greenrobot.eventbus.EventBus
 
 class DeviceHolder(inflater: LayoutInflater, parent: ViewGroup) :
@@ -25,7 +26,9 @@ class DeviceHolder(inflater: LayoutInflater, parent: ViewGroup) :
     fun bind(device: BluetoothDevice) {
         nameTv?.text = device.name
         macTv?.text = device.address
-        linearLayout!!.setOnClickListener { EventBus.getDefault().post(device.address) }
+        linearLayout!!.setOnClickListener {
+            EventBus.getDefault().post(ConnectBluetooth(device))
+        }
     }
 
 }

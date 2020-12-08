@@ -13,10 +13,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.toricarro.databinding.ActivityMainBinding
+import app.toricarro.models.ConnectBluetooth
 import app.toricarro.utils.AppUtils
 import app.toricarro.utils.BroadcastService
 import app.toricarro.views.launch.LaunchActivity
 import app.toricarro.views.main.DeviceAdapter
+import me.aflak.bluetooth.Bluetooth
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -25,6 +27,8 @@ class MainActivity : AppCompatActivity() {
     private var adapter: BluetoothAdapter? = null
     private var broadcastRegistered = false
     private var receiver: BroadcastService? = null
+
+    private lateinit var bluetooth: Bluetooth
 
     private lateinit var deviceAdapter: DeviceAdapter
 
@@ -50,7 +54,8 @@ class MainActivity : AppCompatActivity() {
 
         b.swipe.setOnRefreshListener { linkDevice() }
 
-        linkDevice()
+        bluetooth = Bluetooth(this)
+
     }
 
     private fun linkDevice() {
@@ -103,28 +108,43 @@ class MainActivity : AppCompatActivity() {
         b.swipe.isRefreshing = false
     }
 
+
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun onMessageEvent(mac: String) {
+    fun onMessageEvent(connect: ConnectBluetooth) {
         opening = true
         if (opening) {
+            bluetooth.pair(connect.device, "5467")
             val intent = Intent(this, LaunchActivity::class.java)
-            intent.putExtra("MAC", mac)
+            intent.putExtra("MAC", connect.device)
             startActivity(intent)
-            finish()
+//            finish()
         }
     }
 
 
     override fun onStart() {
         super.onStart()
+
+        if (receiver == null) receiver = BroadcastService()
+        linkDevice()
+        bluetooth.onStart()
+
         EventBus.getDefault().register(this)
     }
 
     override fun onStop() {
         super.onStop()
         EventBus.getDefault().unregister(this)
+        bluetooth.onStop()
+
         adapter!!.cancelDiscovery()
-        unregisterReceiver(receiver)
+
+        broadcastRegistered = false
+        try {
+            unregisterReceiver(receiver)
+        } catch (e: Exception) {
+
+        }
     }
 
     private val permissions: ActivityResultLauncher<Array<String>> =
