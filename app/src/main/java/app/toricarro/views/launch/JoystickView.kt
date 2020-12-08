@@ -83,7 +83,7 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
             if (e.action != MotionEvent.ACTION_UP) calculateJoystickMovement(e)
             else {
                 drawJoystick(cx, cy)
-                joystickCallback.onJoysticMoved(0f, 0f, id)
+                joystickCallback.onJoystickMoved(0f, 0f, id)
             }
         }
         return true
@@ -93,18 +93,18 @@ class JoystickView : SurfaceView, SurfaceHolder.Callback {
         val displacement = sqrt(((e.x - cx).pow(2)) + ((e.y - cy).pow(2)))
         if (displacement < baseRadius) {
             drawJoystick(e.x, e.y)
-            joystickCallback.onJoysticMoved((e.x-cx)/baseRadius, (e.y-cy)/baseRadius, id)
+            joystickCallback.onJoystickMoved((e.x-cx)/baseRadius, (e.y-cy)/baseRadius, id)
         }
         else {
             val ratio = baseRadius / displacement
             val constrainedX = cx + (e.x - cx) * ratio
             val constrainedY = cy + (e.y - cy) * ratio
             drawJoystick(constrainedX, constrainedY)
-            joystickCallback.onJoysticMoved((constrainedX-cx)/baseRadius, (constrainedY-cy)/baseRadius, id)
+            joystickCallback.onJoystickMoved((constrainedX-cx)/baseRadius, (constrainedY-cy)/baseRadius, id)
         }
     }
 
     interface JoystickListener {
-        fun onJoysticMoved(xPercent: Float, yPercent: Float, id: Int)
+        fun onJoystickMoved(xPercent: Float, yPercent: Float, id: Int)
     }
 }

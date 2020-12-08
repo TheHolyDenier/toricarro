@@ -3,12 +3,130 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:layout_margin="10dp"
     android:orientation="vertical"
     tools:context=".views.launch.LaunchActivity">
 
-    <app.toricarro.views.launch.JoystickView
-        android:id="@+id/joystick"
+    <LinearLayout
+        android:id="@+id/rg"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_height="@dimen/button"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <CheckBox
+            android:id="@+id/blinker_left"
+            android:layout_width="@dimen/button"
+            android:layout_height="match_parent"
+            android:background="@drawable/ic_backwards"
+            android:backgroundTint="@color/light_gray"
+            android:button="@android:color/transparent" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <CheckBox
+            android:id="@+id/emergency_light"
+            android:layout_width="@dimen/button"
+            android:layout_height="match_parent"
+            android:background="@drawable/ic_emergency_light"
+            android:backgroundTint="@color/light_gray"
+            android:button="@android:color/transparent" />
+
+        <FrameLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <CheckBox
+            android:id="@+id/blinker_right"
+            android:layout_width="@dimen/button"
+            android:layout_height="match_parent"
+            android:background="@drawable/ic_forward"
+            android:backgroundTint="@color/light_gray"
+            android:button="@android:color/transparent" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/fires_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/fire_single"
+                    style="@style/Theme.Toricarro.Button"
+                    android:layout_width="@dimen/button"
+                    android:layout_height="@dimen/button"
+                    android:src="@drawable/ic_1" />
+
+                <ImageButton
+                    android:id="@+id/fire_burst"
+                    style="@style/Theme.Toricarro.Button"
+                    android:layout_width="@dimen/button"
+                    android:layout_height="@dimen/button"
+                    android:src="@drawable/ic_3" />
+
+                <ImageButton
+                    android:id="@+id/fire_automatic"
+                    style="@style/Theme.Toricarro.Button"
+                    android:layout_width="@dimen/button"
+                    android:layout_height="@dimen/button"
+                    android:src="@drawable/ic_infinite" />
+            </LinearLayout>
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <CheckBox
+                    android:id="@+id/pointer"
+                    android:layout_width="@dimen/button"
+                    android:layout_height="@dimen/button"
+                    android:background="@drawable/ic_pointer_off"
+                    android:backgroundTint="@color/light_gray"
+                    android:button="@android:color/transparent" />
+
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1" />
+
+                <CheckBox
+                    android:id="@+id/speed"
+                    android:layout_width="@dimen/button"
+                    android:layout_height="@dimen/button"
+                    android:background="@drawable/ic_speed"
+                    android:backgroundTint="@color/light_gray"
+                    android:button="@android:color/transparent" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <app.toricarro.views.launch.JoystickView
+            android:id="@+id/joystick"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+
 </LinearLayout>
