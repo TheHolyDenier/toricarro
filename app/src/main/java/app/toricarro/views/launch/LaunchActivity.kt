@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.content.pm.ActivityInfo
 import android.os.Bundle
 import android.view.MotionEvent
+import android.view.View
 import android.view.View.OnTouchListener
 import android.view.WindowManager
 import android.widget.CheckBox
@@ -29,13 +30,15 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     private var retries = 0
     private var x: Float = 0f
     private var y: Float = 0f
-    private var speed = arrayListOf(1000, 2000)
+    private var speed = arrayListOf(200, 2000)
 
     private lateinit var device: BluetoothDevice
     private lateinit var bluetooth: Bluetooth
 
     private var sendingData = false
     private var activityOn = false
+
+    private var fires = arrayOf(false, false, false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,15 +55,7 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         b.firesGroup.children.forEach {
             if (it is ImageButton) {
                 it.setOnTouchListener(OnTouchListener { v, event ->
-                    if (event.action == MotionEvent.ACTION_DOWN)
-                        it.imageTintList = resources.getColorStateList(
-                            R.color.colorPrimary,
-                            theme
-                        ) else if (event.action == MotionEvent.ACTION_UP)
-                        it.imageTintList = resources.getColorStateList(
-                            R.color.light_gray,
-                            theme
-                        )
+                    fire(event, it, v)
                     return@OnTouchListener true
                 })
             }
@@ -87,8 +82,33 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    }
 
+    private fun fire(
+        event: MotionEvent,
+        it: ImageButton,
+        v: View
+    ) {
+        if (event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE)
+            it.imageTintList = resources.getColorStateList(
+                R.color.colorPrimary,
+                theme
+            ) else if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL)
+            it.imageTintList = resources.getColorStateList(
+                R.color.light_gray,
+                theme
+            )
+        firePressed(
+            if (v.id == b.fireSingle.id) 0 else if (v.id == b.fireBurst.id) 1 else 2,
+            event.action == MotionEvent.ACTION_DOWN || event.action == MotionEvent.ACTION_MOVE
+        )
+    }
 
+    private fun firePressed(pos: Int, ev: Boolean): Boolean {
+        for ((i, _) in fires.withIndex()) {
+            fires[i] = i == pos && ev
+        }
+        return true
     }
 
     private fun setBluetooth() {
@@ -100,12 +120,13 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                 retries = 0
                 sendingData = true
                 sendData()
+                checkLink()
             }
 
             override fun onDeviceDisconnected(device: BluetoothDevice, message: String) {
                 AppUtils.log("onDeviceDisconnected", baseContext)
                 startMain()
-
+                checkLink()
             }
 
             override fun onMessage(message: ByteArray) {
@@ -116,15 +137,21 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
             override fun onError(errorCode: Int) {
                 AppUtils.log("error $errorCode", baseContext)
                 startMain()
+                checkLink()
             }
 
             override fun onConnectError(device: BluetoothDevice, message: String) {
                 AppUtils.log("onConnectError $message", baseContext)
                 startMain()
-
+                checkLink()
 
             }
         })
+    }
+
+    private fun checkLink() {
+        b.linked.setImageResource(if (bluetooth != null && bluetooth.isConnected) R.drawable.ic_power else R.drawable.ic_power_off)
+        b.linked.setColorFilter(getColor(if (bluetooth != null && bluetooth.isConnected) R.color.colorPrimary else R.color.light_gray))
     }
 
     private fun sendData() {
@@ -136,20 +163,23 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                 byteArrayOf(
                     171.toByte(),
                     205.toByte(),
-                    (x * currentSpeed / 256).toInt().toByte(),
                     (x * currentSpeed % 256).toInt().toByte(),
-                    (y * currentSpeed / 256).toInt().toByte(),
+                    (x * currentSpeed / 256).toInt().toByte(),
                     (y * currentSpeed % 256).toInt().toByte(),
-                    (if (b.fireSingle.isSelected) 1 else 0).toByte(),
-                    (if (b.fireBurst.isSelected) 1 else 0).toByte(),
-                    (if (b.fireAutomatic.isSelected) 1 else 0).toByte(),
-                    (if (b.pointer.isSelected) 1 else 0).toByte(),
+                    (y * currentSpeed / 256).toInt().toByte(),
+                    (if (fires[0]) 1 else 0).toByte(),
+                    (if (fires[1]) 1 else 0).toByte(),
+                    (if (fires[2]) 1 else 0).toByte(),
+                    (if (pointerActive) 1 else 0).toByte(),
                     (if (b.blinkerLeft.isSelected) 1 else 0).toByte(),
                     (if (b.emergencyLight.isSelected) 1 else 0).toByte(),
                     (if (b.blinkerRight.isSelected) 1 else 0).toByte(),
                 )
             bluetooth.send(bytes)
-            AppUtils.log("bytes ${bytes.joinToString(prefix = "[", postfix = "]")}} ${bytes.size}", baseContext)
+            AppUtils.log(
+                "bytes ${bytes.joinToString(prefix = "[", postfix = "]")}} ${bytes.size}",
+                baseContext
+            )
             delay(200)
             if (sendingData && activityOn) sendData()
         }
@@ -193,7 +223,6 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     }
 
     override fun onJoystickMoved(xPercent: Float, yPercent: Float, id: Int) {
-        AppUtils.log("id$id: x$xPercent y$yPercent", this)
         x = xPercent
         y = yPercent
     }

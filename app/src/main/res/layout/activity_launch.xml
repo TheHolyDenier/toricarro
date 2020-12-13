@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -118,6 +119,13 @@
                     android:background="@drawable/ic_speed"
                     android:backgroundTint="@color/light_gray"
                     android:button="@android:color/transparent" />
+
+                <ImageView
+                    android:id="@+id/linked"
+                    android:layout_width="@dimen/button"
+                    android:layout_height="@dimen/button"
+                    android:src="@drawable/ic_power_off"
+                    app:tint="@color/light_gray" />
             </LinearLayout>
         </LinearLayout>
 

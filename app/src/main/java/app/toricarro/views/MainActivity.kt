@@ -14,7 +14,6 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import app.toricarro.databinding.ActivityMainBinding
 import app.toricarro.models.ConnectBluetooth
-import app.toricarro.utils.AppUtils
 import app.toricarro.utils.BroadcastService
 import app.toricarro.views.launch.LaunchActivity
 import app.toricarro.views.main.DeviceAdapter
@@ -117,7 +116,6 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, LaunchActivity::class.java)
             intent.putExtra("MAC", connect.device)
             startActivity(intent)
-//            finish()
         }
     }
 
@@ -151,7 +149,6 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
             var changed = false
             permissions.entries.forEach {
-                AppUtils.log("${it.key} = ${it.value}", this)
                 if (!changed && it.value) changed = true
             }
             if (changed) linkDevice()
