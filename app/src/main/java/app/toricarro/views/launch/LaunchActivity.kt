@@ -11,6 +11,7 @@ import android.widget.CheckBox
 import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.children
 import app.toricarro.R
 import app.toricarro.databinding.ActivityLaunchBinding
@@ -30,7 +31,6 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     private var retries = 0
     private var x: Float = 0f
     private var y: Float = 0f
-    private var speed = arrayListOf(200, 2000)
 
     private lateinit var device: BluetoothDevice
     private lateinit var bluetooth: Bluetooth
@@ -65,7 +65,8 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
             if (it is CheckBox) {
                 pointerActive = !pointerActive
                 it.background =
-                    resources.getDrawable(
+                    ResourcesCompat.getDrawable(
+                        resources,
                         if (pointerActive) R.drawable.ic_pointer_on else R.drawable.ic_pointer_off,
                         theme
                     )
@@ -83,6 +84,7 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
     }
+
 
     private fun fire(
         event: MotionEvent,
@@ -158,8 +160,6 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         GlobalScope.launch {
 //            ARRAY 13 bytes: INITIALIZATION (0xABCD), x * 2000, y * 2000, singleshot (0/1),
 //            burts, fullauto, laserpoint, blinkerleft, emergency, blinkerright
-            val currentSpeed = speed[if (b.speed.isSelected) 0 else 1]
-
             val controls: Int = (
                     (if (fires[0]) 1 else 0)
                             + (if (fires[1]) 2 else 0)
@@ -168,22 +168,16 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                             + (if (b.blinkerLeft.isSelected) 16 else 0)
                             + (if (b.emergencyLight.isSelected) 32 else 0)
                             + (if (b.blinkerRight.isSelected) 64 else 0)
+                            + if (b.speed.isSelected) 128 else 0
                     )
 
-            AppUtils.log("x($x):${x * currentSpeed} y($y):${y * currentSpeed}", baseContext)
-
-            val currentX = setSpeed(currentSpeed, x)
-            val currentY = setSpeed(currentSpeed, y)
 
             val bytes =
                 byteArrayOf(
                     171.toByte(),
                     205.toByte(),
-//                    currentX.toInt().toByte(), currentY.toInt().toByte(),
-                    (currentX % 256).toInt().toByte(),
-                    (currentX / 256).toInt().toByte(),
-                    (currentY % 256).toInt().toByte(),
-                    (currentY / 256).toInt().toByte(),
+                    x.toInt().toByte(),
+                    y.toInt().toByte(),
                     controls.toByte()
                 )
 
@@ -194,14 +188,11 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                 baseContext
             )
 
-//            delay(200)
-            delay(1000)
+            delay(1000 / 10)
             if (sendingData && activityOn) sendData()
         }
     }
 
-    private fun setSpeed(currentSpeed: Int, f: Float) =
-        if (f < 0) (f * currentSpeed) * -1 + 32768 else (f * currentSpeed)
 
     private fun checkRBClick(checkedId: Int) {
         controlId = if (checkedId == controlId) 0 else checkedId
@@ -241,8 +232,8 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
     }
 
     override fun onJoystickMoved(xPercent: Float, yPercent: Float, id: Int) {
-        x = xPercent
-        y = yPercent
+        x = xPercent * 127
+        y = yPercent * 127 * -1
     }
 
 
