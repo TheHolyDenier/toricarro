@@ -168,7 +168,7 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                             + (if (b.blinkerLeft.isSelected) 16 else 0)
                             + (if (b.emergencyLight.isSelected) 32 else 0)
                             + (if (b.blinkerRight.isSelected) 64 else 0)
-                            + if (b.speed.isSelected) 128 else 0
+                            + (if (speedActive) 128 else 0)
                     )
 
 
