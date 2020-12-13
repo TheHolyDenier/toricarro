@@ -158,32 +158,50 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
         GlobalScope.launch {
 //            ARRAY 13 bytes: INITIALIZATION (0xABCD), x * 2000, y * 2000, singleshot (0/1),
 //            burts, fullauto, laserpoint, blinkerleft, emergency, blinkerright
-            val currentSpeed = speed[if (b.speed.isSelected) 1 else 0]
+            val currentSpeed = speed[if (b.speed.isSelected) 0 else 1]
+
+            val controls: Int = (
+                    (if (fires[0]) 1 else 0)
+                            + (if (fires[1]) 2 else 0)
+                            + (if (fires[2]) 4 else 0)
+                            + (if (pointerActive) 8 else 0)
+                            + (if (b.blinkerLeft.isSelected) 16 else 0)
+                            + (if (b.emergencyLight.isSelected) 32 else 0)
+                            + (if (b.blinkerRight.isSelected) 64 else 0)
+                    )
+
+            AppUtils.log("x($x):${x * currentSpeed} y($y):${y * currentSpeed}", baseContext)
+
+            val currentX = setSpeed(currentSpeed, x)
+            val currentY = setSpeed(currentSpeed, y)
+
             val bytes =
                 byteArrayOf(
                     171.toByte(),
                     205.toByte(),
-                    (x * currentSpeed % 256).toInt().toByte(),
-                    (x * currentSpeed / 256).toInt().toByte(),
-                    (y * currentSpeed % 256).toInt().toByte(),
-                    (y * currentSpeed / 256).toInt().toByte(),
-                    (if (fires[0]) 1 else 0).toByte(),
-                    (if (fires[1]) 1 else 0).toByte(),
-                    (if (fires[2]) 1 else 0).toByte(),
-                    (if (pointerActive) 1 else 0).toByte(),
-                    (if (b.blinkerLeft.isSelected) 1 else 0).toByte(),
-                    (if (b.emergencyLight.isSelected) 1 else 0).toByte(),
-                    (if (b.blinkerRight.isSelected) 1 else 0).toByte(),
+//                    currentX.toInt().toByte(), currentY.toInt().toByte(),
+                    (currentX % 256).toInt().toByte(),
+                    (currentX / 256).toInt().toByte(),
+                    (currentY % 256).toInt().toByte(),
+                    (currentY / 256).toInt().toByte(),
+                    controls.toByte()
                 )
+
             bluetooth.send(bytes)
+
             AppUtils.log(
                 "bytes ${bytes.joinToString(prefix = "[", postfix = "]")}} ${bytes.size}",
                 baseContext
             )
-            delay(200)
+
+//            delay(200)
+            delay(1000)
             if (sendingData && activityOn) sendData()
         }
     }
+
+    private fun setSpeed(currentSpeed: Int, f: Float) =
+        if (f < 0) (f * currentSpeed) * -1 + 32768 else (f * currentSpeed)
 
     private fun checkRBClick(checkedId: Int) {
         controlId = if (checkedId == controlId) 0 else checkedId
