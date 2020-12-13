@@ -149,7 +149,7 @@ class LaunchActivity : AppCompatActivity(), JoystickView.JoystickListener {
                     (if (b.blinkerRight.isSelected) 1 else 0).toByte(),
                 )
             bluetooth.send(bytes)
-            AppUtils.log("bytes $bytes ${bytes.size}", baseContext)
+            AppUtils.log("bytes ${bytes.joinToString(prefix = "[", postfix = "]")}} ${bytes.size}", baseContext)
             delay(200)
             if (sendingData && activityOn) sendData()
         }
